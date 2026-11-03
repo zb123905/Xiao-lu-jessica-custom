@@ -1,0 +1,13 @@
+{
+    "name": "杰西卡的私人订制",
+    "author": "洁西卡🦌",
+    "version": "v1.0",
+    "versionCode": 101,
+    "features": {
+        "strict": true,
+        "pedestal": true
+    },
+    "module": "uperf,sfanalysis",
+    "state": "/data/local/tmp/jessica_perf/cur_powermode.txt",
+    "entry": "/data/powercfg.sh"
+}

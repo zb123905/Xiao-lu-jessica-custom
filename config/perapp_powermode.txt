@@ -1,0 +1,21 @@
+# 杰西卡的私人订制 v1.6 · 分应用性能模式配置
+# '-' 屏幕熄灭规则   '*' 全局默认规则(auto时生效)
+# 三角洲行动 → 性能档（目标≤7.5W稳帧）
+com.tencent.tmgp.dfm performance
+# 王者荣耀(含体验服) → 均衡档（目标~4W）
+com.tencent.tmgp.sgame balance
+com.tencent.tmgp.sgamece balance
+# 无尽的拉格朗日(官方/4399) → 省电档（低温+90Hz）
+com.netease.lglr powersave
+com.netease.lglr.m4399 powersave
+# 常用日常应用 → 均衡档（跟手流畅）
+com.tencent.mobileqq balance
+com.tencent.mm balance
+com.eg.android.AlipayGphone balance
+com.taobao.taobao balance
+com.jingdong.app.mall balance
+com.xunmeng.pinduoduo balance
+tv.danmaku.bili balance
+# 其余（含桌面）→ 省电档 + 90Hz
+- powersave
+* powersave

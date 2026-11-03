@@ -1,0 +1,7 @@
+id=jessica_perf
+name=杰西卡的私人订制
+version=洁西卡定制版 v1.0（基于 uperf 904 / Game Turbo 1.51）
+versionCode=26110201
+author=洁西卡🦌（原作 Matt Yang / 吟惋兮 / yc9559）
+description=红米K70(vermeer·SM8550)专属私人调度：日常balance丝滑省电（静止自动降频小核休息）；打开三角洲行动/王者荣耀自动满血；无尽的拉格朗日自动走低温稳帧档；Scene工具箱可手动切档。与Eclipse定制温控和平共存（不杀温控）。内置防猝死看门狗：uperf意外退出自动拉起，连续失败自动还原HyperOS默认频率，绝不留锁死状态。状态文件藏在/data/local/tmp/jessica_perf，普通应用不可见。❤️
+ASOPT_VERSIONCODE=282
