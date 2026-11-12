@@ -1,0 +1,5 @@
+# 杰西卡的私人订制 v4.0 · 分应用性能模式
+# 格式：包名 模式（powersave/balance/performance/speed/game）
+# 'game' = 游戏特化档（读 game.cfg，开启亮度保底）
+com.tencent.tmgp.sgame game
+com.tencent.tmgp.dfm performance
