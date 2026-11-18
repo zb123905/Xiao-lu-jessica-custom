@@ -56,6 +56,14 @@ LAST_MIN="init"
 LAST_SMOOTH=""
 LAST_SMOOTH4=""
 
+# —— cpuset 分组（吸收 Uperf 精华）：系统后台钉出大中核 ——
+SYSBG=/dev/cpuset/system-background/cpus
+RESTR=/dev/cpuset/restricted/cpus
+
+# 拉起触摸加速守护（事件驱动，仅省电/均衡档生效）
+pgrep -f "touch_boos[t]" >/dev/null 2>&1 || \
+    setsid sh "$MODDIR/script/touch_boost.sh" >/dev/null 2>&1 &
+
 touch_watch() {
     while true; do
         timeout 0.2 getevent -c 1 2>/dev/null >/dev/null && date +%s > "$P/last_touch" 2>/dev/null
@@ -395,6 +403,13 @@ while true; do
     if [ "$gm" != "$LAST_GMIN" ]; then
         echo "$gm" > "$GPU_MINF" 2>/dev/null && LAST_GMIN="$gm"
     fi
+
+    # —— cpuset 分组托管：system-background→0-3、restricted→0-2，每轮校验防系统改回 ——
+    echo "$PROF" > /data/local/tmp/jessica_perf4/prof.txt 2>/dev/null
+    cur_bg=$(cat $SYSBG 2>/dev/null)
+    [ "$cur_bg" != "0-3" ] && echo "0-3" > $SYSBG 2>/dev/null
+    cur_rs=$(cat $RESTR 2>/dev/null)
+    [ "$cur_rs" != "0-2" ] && echo "0-2" > $RESTR 2>/dev/null
 
     tpl_guard "$T"
 done
