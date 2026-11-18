@@ -34,13 +34,17 @@ log(){ echo "$(date '+%m-%d %H:%M:%S') [sched4] $1" >> "$LOG" 2>/dev/null; }
 
 GPU_CLK=/sys/class/kgsl/kgsl-3d0/max_gpuclk
 GPU_DF=/sys/class/kgsl/kgsl-3d0/devfreq/max_freq
+chmod 644 "$GPU_DF" "$GPU_CLK" 2>/dev/null
 GPU_TPL=/sys/class/kgsl/kgsl-3d0/thermal_pwrlevel
+GPU_MINF=/sys/class/kgsl/kgsl-3d0/devfreq/min_freq
+chmod 644 "$GPU_MINF" 2>/dev/null
+LAST_GMIN=""
 
 IM7=$(cat /sys/devices/system/cpu/cpu7/cpufreq/cpuinfo_max_freq 2>/dev/null)
 case "$IM7" in ''|*[!0-9]*) IM7=2726400 ;; esac
 
-CAP_FULL=600000000; CAP_MID=550000000; CAP_LOW=470000000
-HOT_LOW=92000; HOT_MID=86000; COOL_MID=78000; COOL_FULL=74000
+CAP_FULL=690000000; CAP_MID=615000000; CAP_LOW=550000000
+HOT_LOW=96000; HOT_MID=93000; COOL_MID=76000; COOL_FULL=80000
 FUSE_ON=97000; FUSE_OFF=88000; FUSE_CNT_NEED=3
 
 # —— Uperf 式触控感知：小核托底 + 触摸提频 ——
@@ -132,9 +136,10 @@ soc_temp() {
 }
 
 set_gpu() {
-    [ "$1" = "$LAST_GPU" ] && return 0
     for f in "$GPU_CLK" "$GPU_DF"; do
-        [ -f "$f" ] && echo "$1" > "$f" 2>/dev/null
+        [ -f "$f" ] || continue
+        cur=$(cat "$f" 2>/dev/null)
+        if [ "$cur" != "$1" ]; then chmod 644 "$f" 2>/dev/null; echo "$1" > "$f" 2>/dev/null; fi
     done
     LAST_GPU="$1"; GPU_TS=$(date +%s)
 }
@@ -175,6 +180,7 @@ brightness_guard() {
 
 gpu_adaptive() {
     [ "$FUSE" = "1" ] && return 0
+    [ "$PROF" = "performance" ] || return 0
     now=$(date +%s)
     case "$LAST_GPU" in
         "$CAP_FULL")
@@ -186,12 +192,12 @@ gpu_adaptive() {
             elif [ "$1" -le "$COOL_FULL" ]; then want=$CAP_FULL
             else want=$CAP_MID; fi ;;
         "$CAP_LOW")
-            if   [ "$1" -le "$COOL_MID" ]; then want=$CAP_MID
+            if [ "$1" -le "$COOL_MID" ]; then want=$CAP_MID
             else want=$CAP_LOW; fi ;;
         *) want=$CAP_FULL ;;
     esac
-    [ "$want" = "$LAST_GPU" ] && return 0
-    [ $((now - GPU_TS)) -lt 30 ] && return 0
+    cur=$(cat $GPU_DF 2>/dev/null)
+    [ "$want" = "$LAST_GPU" ] && [ "$cur" = "$want" ] && return 0
     set_gpu "$want"
     log "GPU自适应 → $(($want / 1000000))MHz（SOC=$1）"
 }
@@ -335,13 +341,9 @@ while true; do
         fi
     fi
 
-    # —— 性能/极速档热平滑（借鉴 Uperf 功率限幅思路）——
-    # 不等内核 96°C 硬节流，提前在 88°C 给大核/中核留余量，≤82°C 放满
-    if [ "$PROF" = "performance" ] || [ "$PROF" = "speed" ] || [ "$PROF" = "game" ]; then
-        im7=$(cpu_info_max 7); [ -n "$im7" ] || im7=3187200
-        # 极速档（带散热器场景）：阈值上移，撒开跑；性能档维持 88/92
-        if [ "$PROF" = "speed" ]; then TS_MID=92000; TS_HI=88000; TS_FULL=82000
-        else TS_MID=92000; TS_HI=88000; TS_FULL=82000; fi
+    # —— 性能/game 档热平滑（借鉴 Uperf 功率限幅思路）——
+    # 极速档（散热器场景）不做任何前置平滑：全速到底，只留 97°C 热保险丝兜底
+    if [ "$PROF" = "performance" ] || [ "$PROF" = "game" ]; then
         if   [ "$T" -ge "$TS_HI" ]; then want7=2342400; want4=2188800
         elif [ "$T" -ge "$TS_MID" ]; then want7=2649600; want4=2054400
         elif [ "$T" -le "$TS_FULL" ]; then want7=$im7; want4=$(cpu_info_max 4)
@@ -386,6 +388,12 @@ while true; do
         fi
     else
         LAST_LLCC=""
+    fi
+
+    # —— 极速档 GPU 下限托底：550 起步防 devfreq 保守降频；其他档恢复默认 ——
+    case "$PROF" in speed) gm=550000000;; performance) gm=470000000;; *) gm=305280000;; esac
+    if [ "$gm" != "$LAST_GMIN" ]; then
+        echo "$gm" > "$GPU_MINF" 2>/dev/null && LAST_GMIN="$gm"
     fi
 
     tpl_guard "$T"
