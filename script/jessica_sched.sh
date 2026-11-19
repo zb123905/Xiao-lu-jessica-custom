@@ -53,6 +53,7 @@ BAL_MIN=1017600   # 均衡：亮屏触摸时小核托底 1.0G（参考 Uperf sdm
 PERF_MIN=1228800  # 性能/极速：小核常驻 1.2G
 MIN0=1017600
 LAST_LLCC=""
+LAST_BUSMIN=""
 LAST_MIN="init"
 LAST_SMOOTH=""
 LAST_SMOOTH4=""
@@ -398,6 +399,25 @@ while true; do
         fi
     else
         LAST_LLCC=""
+    fi
+
+    # —— 极速档总线托底：DDR/L3/LLCC 下限抬高，防大场面内存深谷卡顿（性能档 8.5W 预算不动） ——
+    if [ "$PROF" = "speed" ]; then
+        if [ "$LAST_BUSMIN" != "1" ]; then
+            echo 1555000 > /sys/devices/system/cpu/bus_dcvs/DDR/hw_min_freq 2>/dev/null
+            echo 844800  > /sys/devices/system/cpu/bus_dcvs/L3/hw_min_freq 2>/dev/null
+            echo 600000  > /sys/devices/system/cpu/bus_dcvs/LLCC/hw_min_freq 2>/dev/null
+            LAST_BUSMIN=1
+            log "总线托底：DDR>=1555 L3>=845 LLCC>=600"
+        fi
+    else
+        if [ "$LAST_BUSMIN" = "1" ]; then
+            echo 547000 > /sys/devices/system/cpu/bus_dcvs/DDR/hw_min_freq 2>/dev/null
+            echo 307200 > /sys/devices/system/cpu/bus_dcvs/L3/hw_min_freq 2>/dev/null
+            echo 300000 > /sys/devices/system/cpu/bus_dcvs/LLCC/hw_min_freq 2>/dev/null
+            LAST_BUSMIN=""
+            log "总线托底解除（$PROF）"
+        fi
     fi
 
     # —— 极速档 GPU 下限托底：550 起步防 devfreq 保守降频；其他档恢复默认 ——
