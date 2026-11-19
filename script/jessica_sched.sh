@@ -314,6 +314,7 @@ while true; do
     # —— 档位解析与应用（常驻复查）——
     resolve_mode
     PROF=$RESP
+    echo "$PROF" > "$P/current_mode" 2>/dev/null
     W=1; screen_off && W=0
     # 省电档自适应：后台任务超过 5 个 → 自动切均衡保后台活性
     if [ "$PROF" = "powersave" ]; then
@@ -406,6 +407,18 @@ while true; do
 
     # —— cpuset 分组托管（v4.6 实测可能拖累日常流畅，先停用观察） ——
     echo "$PROF" > /data/local/tmp/jessica_perf4/prof.txt 2>/dev/null
+
+    # —— swap 巡检：zram 掉线则当场补挂（Scene swap_controller 曾运行中掐 swap） ——
+    now=$(date +%s)
+    if [ $((now - ${SWAP_TS:-0})) -ge 60 ]; then
+        SWAP_TS=$now
+        if [ "$(wc -l < /proc/swaps)" -le 1 ]; then
+            chmod 644 /sys/block/zram0/disksize 2>/dev/null
+            [ "$(cat /sys/block/zram0/disksize 2>/dev/null)" = "17179869184" ] || echo 17179869184 > /sys/block/zram0/disksize 2>/dev/null
+            mkswap /dev/block/zram0 >/dev/null 2>&1
+            swapon /dev/block/zram0 >/dev/null 2>&1 && log "swap 自愈：zram 16G 补挂成功"
+        fi
+    fi
 
     tpl_guard "$T"
 done
