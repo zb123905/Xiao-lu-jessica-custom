@@ -404,12 +404,8 @@ while true; do
         echo "$gm" > "$GPU_MINF" 2>/dev/null && LAST_GMIN="$gm"
     fi
 
-    # —— cpuset 分组托管：system-background→0-3、restricted→0-2，每轮校验防系统改回 ——
+    # —— cpuset 分组托管（v4.6 实测可能拖累日常流畅，先停用观察） ——
     echo "$PROF" > /data/local/tmp/jessica_perf4/prof.txt 2>/dev/null
-    cur_bg=$(cat $SYSBG 2>/dev/null)
-    [ "$cur_bg" != "0-3" ] && echo "0-3" > $SYSBG 2>/dev/null
-    cur_rs=$(cat $RESTR 2>/dev/null)
-    [ "$cur_rs" != "0-2" ] && echo "0-2" > $RESTR 2>/dev/null
 
     tpl_guard "$T"
 done
