@@ -43,7 +43,7 @@ LAST_GMIN=""
 IM7=$(cat /sys/devices/system/cpu/cpu7/cpufreq/cpuinfo_max_freq 2>/dev/null)
 case "$IM7" in ''|*[!0-9]*) IM7=2726400 ;; esac
 
-CAP_FULL=690000000; CAP_MID=550000000; CAP_LOW=550000000
+CAP_FULL=600000000; CAP_MID=550000000; CAP_LOW=470000000
 HOT_LOW=96000; HOT_MID=93000; COOL_MID=76000; COOL_FULL=80000
 FUSE_ON=97000; FUSE_OFF=88000; FUSE_CNT_NEED=3
 
@@ -399,7 +399,7 @@ while true; do
     fi
 
     # —— 极速档 GPU 下限托底：550 起步防 devfreq 保守降频；其他档恢复默认 ——
-    case "$PROF" in speed) gm=550000000;; performance) gm=470000000;; *) gm=305280000;; esac
+    case "$PROF" in speed) gm=550000000;; performance) gm=370000000;; *) gm=305280000;; esac
     if [ "$gm" != "$LAST_GMIN" ]; then
         echo "$gm" > "$GPU_MINF" 2>/dev/null && LAST_GMIN="$gm"
     fi
