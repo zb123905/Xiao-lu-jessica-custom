@@ -435,7 +435,7 @@ while true; do
     fi
 
     # —— 极速档 GPU 下限托底：550 起步防 devfreq 保守降频；其他档恢复默认 ——
-    case "$PROF" in speed) gm=550000000;; performance) gm=470000000;; *) gm=305280000;; esac
+    case "$PROF" in speed) gm=690000000;; performance) gm=470000000;; *) gm=305280000;; esac
     if [ "$gm" != "$LAST_GMIN" ]; then
         echo "$gm" > "$GPU_MINF" 2>/dev/null && LAST_GMIN="$gm"
     fi
