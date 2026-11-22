@@ -46,7 +46,7 @@ case "$IM7" in ''|*[!0-9]*) IM7=2726400 ;; esac
 CAP_FULL=600000000; CAP_MID=550000000; CAP_LOW=470000000
 HOT_LOW=96000; HOT_MID=93000; COOL_MID=76000; COOL_FULL=80000
 FUSE_ON=97000; FUSE_OFF=88000; FUSE_CNT_NEED=3
-TS_FULL=82000; TS_MID=88000; TS_HI=92000
+TS_FULL=82000; TS_MID=90000; TS_HI=92000
 
 # —— Uperf 式触控感知：小核托底 + 触摸提频 ——
 BAL_MIN=1017600   # 均衡：亮屏触摸时小核托底 1.0G（参考 Uperf sdm8g2.json）
@@ -213,7 +213,7 @@ gpu_adaptive() {
 }
 
 top_app() {
-    timeout 2 dumpsys window 2>/dev/null | sed -n 's/.*mCurrentFocus[^=]*=Window{[^ ]* [^ ]* \([^ /}]*\).*/\1/p' | head -n 1
+    timeout 2 dumpsys window 2>/dev/null | sed -n 's/.*mCurrentFocus[^=]*=Window{[^ ]* [^ ]* \([^ /}]*\).*\/\1/p' | head -n 1
 }
 
 screen_off() {
@@ -421,7 +421,7 @@ while true; do
     fi
 
     # —— 极速档 GPU 下限托底：550 起步防 devfreq 保守降频；其他档恢复默认 ——
-    case "$PROF" in speed) gm=550000000;; performance) gm=370000000;; *) gm=305280000;; esac
+    case "$PROF" in speed) gm=550000000;; performance) gm=470000000;; *) gm=305280000;; esac
     if [ "$gm" != "$LAST_GMIN" ]; then
         echo "$gm" > "$GPU_MINF" 2>/dev/null && LAST_GMIN="$gm"
     fi
