@@ -144,11 +144,12 @@ soc_temp() {
     done
     # 野值过滤：10秒内跳变>15°C 视为传感器误报，沿用上次读数
     now=$(date +%s)
-    if [ -n "$LAST_T" ] && [ $((now - LAST_T_TS)) -lt 10 ] 2>/dev/null; then
+    if [ -n "$LAST_T" ] && [ -n "$LAST_T_TS" ] && [ $((now - LAST_T_TS)) -lt 10 ] 2>/dev/null; then
         d=$((T - LAST_T)); [ "$d" -lt 0 ] && d=$((-d))
-        [ "$d" -gt 15000 ] && { T=$LAST_T; return; }
+        [ "$d" -gt 15000 ] && T=$LAST_T
     fi
     LAST_T=$T; LAST_T_TS=$now
+    echo "$T"
 }
 
 set_gpu() {
@@ -234,6 +235,8 @@ resolve_mode() {
         powersave|balance|performance|speed|game) SRC="手动"; RESP="$m"; return ;;
     esac
     if screen_off; then SRC="息屏"; RESP="powersave"; return; fi
+    # Scene 手动档（非默认）优先于分应用：用户在 Scene 选极速/性能时全局生效
+    if scene_cur_mode && [ "$RESP" != "balance" ]; then return; fi
     now=$(date +%s); [ $((now - TOP_TS)) -ge 5 ] && { TOP=$(top_app); TOP_TS=$now; }; pkg=$TOP
     if [ -n "$pkg" ]; then
         m=$(sed -n "s/^$pkg //p" "$MODDIR/perapp.txt" 2>/dev/null | head -n 1)
@@ -332,7 +335,7 @@ while true; do
     if [ "$PROF" != "$ACTIVE" ]; then
         ACTIVE="$PROF"
         log "档位 → $ACTIVE（来源 $SRC）"
-        echo "$ACTIVE" > "$CUR_FILE" 2>/dev/null
+        # 不回写 CUR_FILE：那是 Scene 的输入通道，回写会造成档位卡死
         echo "$ACTIVE" > "$P/cur_powermode.txt" 2>/dev/null
     fi
     if [ "$FUSE" = "1" ]; then
