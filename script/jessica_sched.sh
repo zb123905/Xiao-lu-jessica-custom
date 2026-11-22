@@ -142,7 +142,13 @@ soc_temp() {
                 [ -n "$v" ] && [ "$v" -gt "$T" ] 2>/dev/null && T=$v ;;
         esac
     done
-    echo "$T"
+    # 野值过滤：10秒内跳变>15°C 视为传感器误报，沿用上次读数
+    now=$(date +%s)
+    if [ -n "$LAST_T" ] && [ $((now - LAST_T_TS)) -lt 10 ] 2>/dev/null; then
+        d=$((T - LAST_T)); [ "$d" -lt 0 ] && d=$((-d))
+        [ "$d" -gt 15000 ] && { T=$LAST_T; return; }
+    fi
+    LAST_T=$T; LAST_T_TS=$now
 }
 
 set_gpu() {
@@ -401,14 +407,19 @@ while true; do
         LAST_LLCC=""
     fi
 
-    # —— 极速档总线托底：DDR/L3/LLCC 下限抬高，防大场面内存深谷卡顿（性能档 8.5W 预算不动） ——
+    # —— 极速档总线托底：新内核 hw_min_freq 只读，探测一次可用性，不可用则停用 ——
     if [ "$PROF" = "speed" ]; then
-        if [ "$LAST_BUSMIN" != "1" ]; then
-            echo 1555000 > /sys/devices/system/cpu/bus_dcvs/DDR/hw_min_freq 2>/dev/null
-            echo 844800  > /sys/devices/system/cpu/bus_dcvs/L3/hw_min_freq 2>/dev/null
-            echo 600000  > /sys/devices/system/cpu/bus_dcvs/LLCC/hw_min_freq 2>/dev/null
-            LAST_BUSMIN=1
-            log "总线托底：DDR>=1555 L3>=845 LLCC>=600"
+        if [ "$LAST_BUSMIN" != "1" ] && [ "$BUSMIN_OK" != "0" ]; then
+            chmod 644 /sys/devices/system/cpu/bus_dcvs/DDR/hw_min_freq 2>/dev/null
+            if echo 1555000 > /sys/devices/system/cpu/bus_dcvs/DDR/hw_min_freq 2>/dev/null; then
+                echo 844800  > /sys/devices/system/cpu/bus_dcvs/L3/hw_min_freq 2>/dev/null
+                echo 600000  > /sys/devices/system/cpu/bus_dcvs/LLCC/hw_min_freq 2>/dev/null
+                LAST_BUSMIN=1
+                log "总线托底：DDR>=1555 L3>=845 LLCC>=600"
+            else
+                BUSMIN_OK=0
+                log "总线托底不可用：内核 hw_min_freq 只读，已停用"
+            fi
         fi
     else
         if [ "$LAST_BUSMIN" = "1" ]; then
