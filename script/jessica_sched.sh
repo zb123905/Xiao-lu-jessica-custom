@@ -455,5 +455,18 @@ while true; do
         fi
     fi
 
+    # —— 冻结应用巡检：雹名单被系统解冻则 5 分钟内重新禁用 ——
+    if [ -f /data/adb/jessica/frozen_apps.list ] && [ $((now - ${FROZEN_TS:-0})) -ge 300 ]; then
+        FROZEN_TS=$now
+        enabled_pkgs=$(pm list packages -e 2>/dev/null)
+        while read p; do
+            [ -n "$p" ] || continue
+            case "$enabled_pkgs" in
+                *"package:$p"*)
+                    pm disable-user --user 0 "$p" >/dev/null 2>&1 && log "冻结巡检：$p 被系统解冻，已重新禁用" ;;
+            esac
+        done < /data/adb/jessica/frozen_apps.list
+    fi
+
     tpl_guard "$T"
 done
