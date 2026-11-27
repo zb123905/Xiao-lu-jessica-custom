@@ -353,7 +353,7 @@ while true; do
             LAST_SUB=""
             G=$(apply_cfg "$PROF")
         fi
-        [ -n "$G" ] && [ "$G" != "$LAST_GPU" ] && set_gpu "$G"
+        [ -n "$G" ] && set_gpu "$G"
         if [ "$PROF" = "game" ]; then
             brightness_guard
         elif [ "$PROF" != "powersave" ]; then
